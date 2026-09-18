@@ -63,7 +63,15 @@ internal sealed class FileKeyProtector(string path) : IConfigurationProtector, I
 
     private byte[]? Read()
     {
-        try { return File.ReadAllBytes(path); }
+        try
+        {
+            using var stream = OpenRead(asynchronous: false);
+            using var buffer = new MemoryStream();
+            stream.CopyTo(buffer);
+            var result = buffer.ToArray();
+            Array.Clear(buffer.GetBuffer(), 0, checked((int)buffer.Length));
+            return result;
+        }
         catch (FileNotFoundException) { return null; }
         catch (DirectoryNotFoundException) { return null; }
     }
@@ -72,7 +80,7 @@ internal sealed class FileKeyProtector(string path) : IConfigurationProtector, I
     {
         try
         {
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous);
+            using var stream = OpenRead(asynchronous: true);
             using var buffer = new MemoryStream();
             await stream.CopyToAsync(buffer, 81920, cancellationToken).ConfigureAwait(false);
             var result = buffer.ToArray();
@@ -82,6 +90,11 @@ internal sealed class FileKeyProtector(string path) : IConfigurationProtector, I
         catch (FileNotFoundException) { return null; }
         catch (DirectoryNotFoundException) { return null; }
     }
+
+    // 原子重命名会短暂持有删除权限，读取必须允许共享删除。
+    private FileStream OpenRead(bool asynchronous) =>
+        new(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete, 4096,
+            asynchronous ? FileOptions.Asynchronous : FileOptions.None);
 
     private AesGcmProtector Remember(byte[] stored)
     {

@@ -104,6 +104,27 @@ public sealed class ConfigurationOptionsTests
         Assert.Empty(Directory.GetFiles(fixture.DirectoryPath, "*.tmp", SearchOption.AllDirectories));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AutomaticKeyReadAllowsAnOutstandingDeleteHandle(bool asynchronous)
+    {
+        using var fixture = new TestFile();
+        var keyPath = Path.Combine(fixture.DirectoryPath, "private", "shared.key");
+        var options = new ConfigurationFileOptions { KeyFilePath = keyPath };
+        using (var original = new ConfigurationFile(RootContext.Default, fixture.FilePath, options))
+            original.Save(new RootSettings { SecretNumber = 42 });
+        var ciphertext = File.ReadAllBytes(fixture.FilePath);
+
+        // Windows 重命名持有删除权限；用测试密钥的 DeleteOnClose 句柄稳定覆盖相同共享契约。
+        using var keyReader = new FileStream(keyPath, FileMode.Open, FileAccess.Read,
+            FileShare.Read | FileShare.Delete, 4096, FileOptions.DeleteOnClose);
+        using var reopened = new ConfigurationFile(RootContext.Default, fixture.FilePath, options);
+        var model = asynchronous ? await reopened.ReadAsync<RootSettings>(fixture.Token) : reopened.Read<RootSettings>();
+        Assert.Equal(42, model.SecretNumber);
+        Assert.Equal(ciphertext, File.ReadAllBytes(fixture.FilePath));
+    }
+
     [Fact]
     public async Task ReadOnlyPlaintextLoadingDefersProtectionUntilExplicitSave()
     {

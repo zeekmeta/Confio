@@ -7,6 +7,7 @@
 - 新增 `ConfigurationFileOptions.Encoding`，默认 UTF-8 无 BOM，支持显式 Unicode 编码、代码页及 `Encoding.Default`；读取识别 Unicode BOM，保存和自动保护写回使用所选编码。
 - 编码失败保留文件和成功快照，拒绝有损字符替换；YAML 支持 UTF-8/16/32，TOML 遵守 UTF-8 要求。
 - Sample 增加编码选择及保存编码、BOM 显示，文件预览和手写明文演示使用相同设置。
+- 修复 Windows 上多个配置文件并发首次使用同一自动 AES 密钥时，读取与原子重命名之间的文件共享冲突。
 
 ## 1.0.0（2026-09-18）
 
