@@ -27,10 +27,10 @@
 
 ## 安装
 
-从 [NuGet.org](https://www.nuget.org/packages/Confio) 安装：
+当前源码面向尚未发布的 **1.1.0**。发布后可从 [NuGet.org](https://www.nuget.org/packages/Confio) 安装：
 
 ```sh
-dotnet add package Confio --version 1.0.0
+dotnet add package Confio --version 1.1.0
 ```
 
 使用默认 nuget.org 源即可，无需添加其他包源。编译要求见[安装指南](https://github.com/zeekmeta/Confio/blob/main/docs/使用指南.md#安装与编译要求)。体验源码可直接[运行示例](#运行示例)，或[构建本地候选包](https://github.com/zeekmeta/Confio/blob/main/docs/开发与验证.md#本地候选包)。

@@ -8,7 +8,7 @@
     <Description>Strongly typed .NET configuration files for JSON, YAML, TOML 1.1, and INI. Synchronous and asynchronous APIs, model defaults and validation, DPAPI / AES-GCM field encryption, and DI / Options / Host integration. Includes a source generator. Supports .NET Framework 4.6.2–4.8.1 and .NET 8 / 9 / 10, with Native AOT on modern .NET.</Description>
     <PackageProjectUrl>https://github.com/zeekmeta/Confio</PackageProjectUrl>
     <PackageTags>configuration;settings;json;yaml;toml;ini;encryption;source-generator;native-aot;dotnet</PackageTags>
-    <PackageReleaseNotes>First stable release: four configuration formats, synchronous and asynchronous APIs, model defaults and validation, DPAPI / AES-GCM encryption, container integration, source generation, and Native AOT. Licensed under MIT. Release notes: https://github.com/zeekmeta/Confio/blob/main/CHANGELOG.md</PackageReleaseNotes>
+    <PackageReleaseNotes>Adds configurable file encodings through ConfigurationFileOptions.Encoding, Unicode BOM detection, code-page support, and lossless conversion checks. The sample includes encoding selection and file previews. Release notes: https://github.com/zeekmeta/Confio/blob/main/CHANGELOG.md</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/zeekmeta/Confio.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>

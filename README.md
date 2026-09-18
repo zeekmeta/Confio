@@ -29,10 +29,10 @@ Use an SDK-style project, `PackageReference`, and C# 12 or later. Building this 
 
 ## Installation
 
-Install from [NuGet.org](https://www.nuget.org/packages/Confio):
+The source tree targets **1.1.0**, which has not been published yet. After release, install it from [NuGet.org](https://www.nuget.org/packages/Confio):
 
 ```sh
-dotnet add package Confio --version 1.0.0
+dotnet add package Confio --version 1.1.0
 ```
 
 The default nuget.org feed is sufficient; no additional package source is required. See the [installation guide](https://github.com/zeekmeta/Confio/blob/main/docs/使用指南.md#安装与编译要求) for compiler requirements. To try the source, [run the sample](#run-the-sample) or [build a local candidate package](https://github.com/zeekmeta/Confio/blob/main/docs/开发与验证.md#本地候选包).
