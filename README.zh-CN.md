@@ -27,7 +27,7 @@
 
 ## 安装
 
-当前源码面向尚未发布的 **1.1.0**。发布后可从 [NuGet.org](https://www.nuget.org/packages/Confio) 安装：
+从 [NuGet.org](https://www.nuget.org/packages/Confio) 安装：
 
 ```sh
 dotnet add package Confio --version 1.1.0

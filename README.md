@@ -29,7 +29,7 @@ Use an SDK-style project, `PackageReference`, and C# 12 or later. Building this 
 
 ## Installation
 
-The source tree targets **1.1.0**, which has not been published yet. After release, install it from [NuGet.org](https://www.nuget.org/packages/Confio):
+Install from [NuGet.org](https://www.nuget.org/packages/Confio):
 
 ```sh
 dotnet add package Confio --version 1.1.0
