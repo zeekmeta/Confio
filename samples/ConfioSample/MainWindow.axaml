@@ -1,0 +1,502 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:ConfioSample"
+        x:Class="ConfioSample.MainWindow"
+        Title="Confio · 配置读写示例"
+        Width="1380" Height="920" MinWidth="1080" MinHeight="760"
+        WindowStartupLocation="CenterScreen"
+        Background="#F1F5F7" Foreground="#152F3E"
+        FontFamily="Microsoft YaHei UI, Segoe UI" FontSize="14">
+  <Window.Styles>
+    <Style Selector="TextBlock.caption">
+      <Setter Property="Foreground" Value="#526B7A" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.heading">
+      <Setter Property="FontSize" Value="17" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Border.surface">
+      <Setter Property="Background" Value="White" />
+      <Setter Property="BorderBrush" Value="#D5E1E6" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="16" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="Padding" Value="12,6" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="Padding" Value="12,9" />
+    </Style>
+    <Style Selector="TextBox.code">
+      <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Microsoft YaHei UI" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="IsReadOnly" Value="True" />
+      <Setter Property="AcceptsReturn" Value="True" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Background" Value="#F5F8FA" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="12" />
+      <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+    </Style>
+    <Style Selector="TextBlock.cell">
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="TextBlock.column">
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="TextAlignment" Value="Center" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+  </Window.Styles>
+
+  <Grid Margin="16" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
+    <Grid ColumnDefinitions="*,Auto">
+      <StackPanel Spacing="4">
+        <StackPanel Orientation="Horizontal" Spacing="14">
+          <TextBlock Text="Confio" FontFamily="Bahnschrift, Segoe UI" FontSize="30" FontWeight="Bold" />
+          <TextBlock Text="配置读写示例" FontSize="21" VerticalAlignment="Center" />
+        </StackPanel>
+        <TextBlock x:Name="FormatHintText" Classes="caption" />
+      </StackPanel>
+      <Border Grid.Column="1" Background="#DFF0F0" CornerRadius="5" Padding="12,7" VerticalAlignment="Center">
+        <TextBlock x:Name="RuntimeLabel" Foreground="#0B737B" FontWeight="SemiBold" FontSize="13" />
+      </Border>
+    </Grid>
+
+    <Border Grid.Row="1" Classes="surface" Padding="14,6">
+      <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+        <StackPanel Spacing="4" VerticalAlignment="Center">
+          <TextBlock x:Name="SessionSummaryText" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <SelectableTextBlock x:Name="FilePathText" Foreground="#526B7A" FontSize="12"
+                               TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding #FilePathText.Text}" />
+          <SelectableTextBlock x:Name="KeyFilePathText" Foreground="#526B7A" FontSize="12"
+                               TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding #KeyFilePathText.Text}" />
+        </StackPanel>
+        <Button x:Name="OpenFileButton" Grid.Column="3" Content="打开配置" Click="OpenFileClick" VerticalAlignment="Center" />
+        <Button x:Name="OpenDirectoryButton" Grid.Column="1" Content="打开目录" Click="OpenDirectoryClick"
+                VerticalAlignment="Center" IsEnabled="False"
+                ToolTip.Tip="打开当前配置文件所在目录；目录不存在时只创建空目录，不会保存配置。" />
+        <Expander x:Name="SessionSettings" Grid.Column="2" Header="新建演示与设置" HorizontalAlignment="Right">
+        <StackPanel x:Name="SessionControls" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+          <TextBlock Text="新演示" Classes="caption" VerticalAlignment="Center" />
+          <ComboBox x:Name="FormatInput" SelectedIndex="0" MinWidth="90" AutomationProperties.Name="新演示的文件格式">
+            <ComboBoxItem Content="JSON" />
+            <ComboBoxItem Content="YAML" />
+            <ComboBoxItem Content="TOML" />
+            <ComboBoxItem Content="INI" />
+          </ComboBox>
+          <ComboBox x:Name="ProtectionInput" SelectedIndex="0" MinWidth="175"
+                    AutomationProperties.Name="新演示的保护方式"
+                    ToolTip.Tip="创建或打开文件时生效。AES-GCM 自动生成并复用密钥文件。">
+            <ComboBoxItem Content="自动选择" />
+            <ComboBoxItem Content="AES-GCM · 自动密钥" />
+          </ComboBox>
+          <Button x:Name="NewSessionButton" Content="新建演示" Click="NewSessionClick" />
+        </StackPanel>
+        </Expander>
+      </Grid>
+    </Border>
+
+    <TabControl x:Name="Workspace" Grid.Row="2" IsEnabled="False" Padding="0">
+      <TabItem Header="读写与加密">
+        <Grid RowDefinitions="Auto,*" RowSpacing="10" Margin="0,10,0,0">
+          <Expander x:Name="GuideExpander" Padding="0" IsExpanded="True"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                    ToolTip.Tip="点击标题可收起或展开引导，随时自由操作。">
+            <Expander.Header>
+              <TextBlock x:Name="GuideTitleText" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
+            </Expander.Header>
+            <Border Background="#E8F3F3" Padding="14,10" CornerRadius="4">
+              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="18" RowSpacing="5">
+                <TextBlock x:Name="GuideExplanationText" Classes="caption" />
+                <SelectableTextBlock x:Name="GuideCodeText" Grid.Row="1" FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
+                                     FontSize="12" TextWrapping="Wrap" Foreground="#135961" />
+                <StackPanel Grid.Column="1" Grid.RowSpan="2" Spacing="5" VerticalAlignment="Center">
+                  <Button x:Name="GuideNextButton" Classes="accent" Click="GuideNextClick" MinWidth="185" MinHeight="40"
+                          HorizontalAlignment="Stretch" AutomationProperties.Name="执行入门引导的下一步" />
+                  <Button x:Name="GuideSourceButton" Content="查看模型与用法源码" Click="GuideSourceClick" FontSize="12" MinHeight="28" />
+                </StackPanel>
+              </Grid>
+            </Border>
+          </Expander>
+        <Grid Grid.Row="1" ColumnDefinitions="320,*,*" ColumnSpacing="12">
+          <Border Classes="surface" Padding="14">
+            <Grid RowDefinitions="Auto,Auto,*" RowSpacing="3">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="heading" Text="你正在编辑" VerticalAlignment="Center" />
+                <CheckBox x:Name="UseAsyncInput" Grid.Column="1" Content="异步 API" IsChecked="True" FontSize="12"
+                          IsCheckedChanged="ApiModeChanged" ToolTip.Tip="勾选使用 ReadAsync / SaveAsync 等可等待方法；取消勾选使用同步方法。" />
+              </Grid>
+              <TextBlock Grid.Row="1" Classes="caption" Text="修改后需保存，才会写入文件并生效。" />
+              <TabControl x:Name="EditorTabs" Grid.Row="2" SelectionChanged="EditorTabChanged">
+                <TabItem Header="邮件">
+                  <Grid RowDefinitions="*,Auto" RowSpacing="10" Margin="0,8,0,0">
+                    <ScrollViewer x:Name="MailEditorScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                      <StackPanel Spacing="8" Margin="0,0,6,0">
+                        <TextBlock Classes="label" Text="服务器 · Host" />
+                        <TextBox x:Name="HostInput" PlaceholderText="smtp.example.com" AutomationProperties.Name="邮件服务器" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                          <StackPanel Spacing="6">
+                            <TextBlock Classes="label" Text="端口 · Port" />
+                            <NumericUpDown x:Name="PortInput" Minimum="1" Maximum="65535"
+                                           Increment="1" FormatString="0" ParsingNumberStyle="Integer" ClipValueToMinMax="False"
+                                           AutomationProperties.Name="邮件端口" />
+                          </StackPanel>
+                          <CheckBox x:Name="TlsInput" Grid.Column="1" Content="启用 TLS" VerticalAlignment="Bottom" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Classes="label" Text="密码" VerticalAlignment="Center" />
+                          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                          <CheckBox x:Name="RevealPasswordInput" Content="显示" FontSize="12"
+                                    IsCheckedChanged="RevealPasswordChanged" AutomationProperties.Name="显示编辑框中的演示密码" />
+                          <CheckBox x:Name="NullPasswordInput" Content="null"
+                                    IsCheckedChanged="NullableInputChanged" AutomationProperties.Name="密码设为 null"
+                                    ToolTip.Tip="表示没有值，与空字符串不同。TOML / INI 无法保存 null，会报错并保留原配置。" />
+                          </StackPanel>
+                        </Grid>
+                        <TextBox x:Name="PasswordInput" PasswordChar="●" PlaceholderText="虚构密码"
+                                 AutomationProperties.Name="演示密码" />
+                        <TextBlock Classes="caption" Text="模型中标有 [Protected]，写入文件时自动加密；读取时自动还原。" />
+                        <Expander x:Name="CollectionExpander" Header="集合与多行文本" HorizontalAlignment="Stretch">
+                          <StackPanel Spacing="8">
+                            <TextBlock Classes="label" Text="收件人 · Recipients（每行一个）" />
+                            <TextBox x:Name="RecipientsInput" AcceptsReturn="True" MinHeight="74" TextWrapping="Wrap"
+                                     AutomationProperties.Name="收件人列表，每行一个" />
+                            <TextBlock Classes="label" Text="备注 · Notes" />
+                            <TextBox x:Name="NotesInput" AcceptsReturn="True" MinHeight="74" TextWrapping="Wrap"
+                                     AutomationProperties.Name="多行备注" />
+                          </StackPanel>
+                        </Expander>
+                        <Expander x:Name="CredentialsExpander" Header="子对象 · 整体保护" HorizontalAlignment="Stretch">
+                          <StackPanel Spacing="8">
+                            <CheckBox x:Name="CredentialsEnabledInput" Content="使用 API 凭据"
+                                      IsCheckedChanged="NullableInputChanged" />
+                            <StackPanel x:Name="CredentialsFields" Spacing="8">
+                              <TextBox x:Name="CredentialUserInput" PlaceholderText="UserName（虚构账户）"
+                                       AutomationProperties.Name="API 凭据用户名" />
+                              <TextBox x:Name="CredentialTokenInput" PasswordChar="●" PlaceholderText="AccessToken（虚构令牌）"
+                                       AutomationProperties.Name="API 凭据令牌" />
+                            </StackPanel>
+                            <TextBlock Classes="caption" Text="整个 Credentials 对象保存为一份密文。取消勾选会设为 null，只有 JSON / YAML 能保存这个空值。" />
+                          </StackPanel>
+                        </Expander>
+                      </StackPanel>
+                    </ScrollViewer>
+                    <WrapPanel Grid.Row="1">
+                      <Button x:Name="FillExampleButton" Content="填入示例" Click="FillExampleClick" Margin="0,0,6,6" />
+                      <Button x:Name="SaveMailButton" Classes="accent" Content="保存" Click="SaveMailClick" Margin="0,0,6,6"
+                              ToolTip.Tip="用这份完整草稿替换文件中的 Mail；同节外部修改也会被覆盖，Retry 保留。" />
+                      <Button x:Name="ResetMailButton" Content="恢复默认" Click="ResetMailClick" Margin="0,0,0,6"
+                              ToolTip.Tip="删除 Mail 的持久化覆盖，恢复模型默认值（例如端口 587），保留 Retry。" />
+                    </WrapPanel>
+                  </Grid>
+                </TabItem>
+                <TabItem Header="重试">
+                  <ScrollViewer x:Name="RetryEditorScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="12" Margin="0,10,6,0">
+                      <TextBlock Classes="label" Text="同一个文件，也能保存另一组配置" />
+                      <TextBlock Classes="caption" Text="重试设置使用 RetrySettings 模型。保存它不会覆盖邮件配置；“次数 +1”根据文件里的最新值更新。" />
+                      <TextBlock Classes="label" Text="最大次数 · MaxAttempts" />
+                      <NumericUpDown x:Name="AttemptsInput" Minimum="1" Maximum="2147483647"
+                                     Increment="1" FormatString="0" ParsingNumberStyle="Integer" ClipValueToMinMax="False"
+                                     AutomationProperties.Name="最大重试次数" />
+                      <TextBlock Classes="label" Text="间隔（秒）· DelaySeconds" />
+                      <NumericUpDown x:Name="DelayInput" Minimum="0" Maximum="2147483647"
+                                     Increment="1" FormatString="0" ParsingNumberStyle="Integer" ClipValueToMinMax="False"
+                                     AutomationProperties.Name="重试间隔秒数" />
+                      <WrapPanel>
+                        <Button x:Name="SaveRetryButton" Content="保存重试配置" Click="SaveRetryClick" Margin="0,0,6,6"
+                                ToolTip.Tip="用这份完整草稿替换文件中的 Retry，Mail 保留。" />
+                        <Button x:Name="UpdateRetryButton" Content="次数 +1" Click="UpdateRetryClick" Margin="0,0,6,6" />
+                        <Button x:Name="ResetRetryButton" Content="恢复重试默认值" Click="ResetRetryClick" Margin="0,0,0,6"
+                                ToolTip.Tip="删除 Retry 的持久化覆盖，恢复模型默认值，保留 Mail。" />
+                      </WrapPanel>
+                      <TextBlock Classes="caption" Text="对应 Update&lt;RetrySettings&gt;(value =&gt; value with { ... })，适用于 record / init 模型。" />
+                    </StackPanel>
+                  </ScrollViewer>
+                </TabItem>
+                <TabItem Header="加密与失败演示">
+                  <ScrollViewer x:Name="ScenariosScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="10" Margin="0,10,6,0">
+                      <TextBlock Classes="label" Text="正常保存：空密码与前缀密码" />
+                      <WrapPanel>
+                        <Button x:Name="EmptyPasswordButton" Content="保存空字符串" Click="EmptyPasswordClick" Margin="0,0,6,6" />
+                        <Button x:Name="PrefixPasswordButton" Content="把 enc:v1:plain 当密码保存" Click="PrefixPasswordClick" Margin="0,0,0,6" />
+                      </WrapPanel>
+                      <TextBlock Classes="caption" Text="空字符串可直接保存，不加密。前缀密码会正常加密；返回“邮件”并勾选“显示”，仍能看到完整的 enc:v1:plain。只有手写文件中，受保护位置的 enc: 才按密文解析。" />
+                      <Separator Background="#D5E1E6" />
+                      <TextBlock Classes="label" Text="正常保存：保护整个子对象" />
+                      <Button x:Name="CredentialsExampleButton" Content="保存虚构 API 凭据" Click="CredentialsExampleClick" />
+                      <TextBlock Classes="caption" Text="程序读到的是 Credentials 对象，文件中是一份密文。返回“邮件”页可编辑其成员。" />
+                      <Separator Background="#D5E1E6" />
+                      <TextBlock x:Name="NullPasswordTitleText" Classes="label" />
+                      <TextBlock x:Name="NullPasswordExplanationText" Classes="caption" />
+                      <Button x:Name="NullPasswordButton" Content="保存 null" Click="NullPasswordClick" />
+                      <Separator Background="#D5E1E6" />
+                      <TextBlock Classes="label" Text="手写的明文，什么时候变成密文" />
+                      <TextBlock Classes="caption" Text="先新建一份含虚构密码的文件，再加载它。右侧可以直接比较保护前后的内容；之前的演示文件会保留。" />
+                      <Button x:Name="PlaintextFileButton" Content="1  新建手写明文文件" Click="PlaintextFileClick" />
+                      <Button x:Name="ProtectPlaintextButton" Content="2  加载文件，观察自动加密" Click="ReloadClick" />
+                      <TextBlock Classes="caption" Text="预期：Password 从原文变为 enc:v1:...，程序仍读到原始密码。这次只需 Reload，无需再调用 Save。" />
+                      <Separator Background="#D5E1E6" />
+                      <TextBlock Classes="label" Text="预期失败：模型校验" />
+                      <Button x:Name="InvalidMailButton" Content="验证空白主机保存失败" Click="InvalidMailClick" />
+                      <TextBlock Classes="caption" Text="模型拒绝保存。文件、快照与通知次数保持不变，操作记录保留失败结果。" />
+                      <Separator Background="#D5E1E6" />
+                      <TextBlock Classes="label" Text="演示文件损坏与还原" />
+                      <WrapPanel>
+                        <Button x:Name="CorruptFileButton" Content="写入损坏内容" Click="CorruptFileClick" IsEnabled="False" Margin="0,0,6,6" />
+                        <Button x:Name="RestoreFileButton" Content="还原演示文件" Click="RestoreFileClick" IsEnabled="False" Margin="0,0,0,6" />
+                      </WrapPanel>
+                      <TextBlock Classes="caption" Text="先保存，再制造损坏并点击“重新加载文件”。失败后仍可读旧配置；“还原”只撤销本次演示的损坏。Confio 尚无备份恢复入口。" />
+                    </StackPanel>
+                  </ScrollViewer>
+                </TabItem>
+              </TabControl>
+            </Grid>
+          </Border>
+
+          <Border Grid.Column="1" Classes="surface" Padding="14">
+            <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="8">
+              <TextBlock Classes="heading" Text="程序实际读到" />
+              <TextBlock Grid.Row="1" Classes="caption" Text="来自真实 Read 调用。左边改了表单，这里不会跟着变。" />
+              <ScrollViewer x:Name="SnapshotScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="12" Margin="0,0,6,0">
+                  <Border Background="#E8F3F3" CornerRadius="4" Padding="12">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="5">
+                      <TextBlock Classes="caption" Text="邮件服务器" />
+                      <TextBlock x:Name="ReadHostText" Grid.Row="1" TextWrapping="Wrap" FontWeight="SemiBold" />
+                      <TextBlock Grid.Column="1" Classes="caption" Text="端口 · Port" />
+                      <TextBlock x:Name="ReadPortText" Grid.Column="1" Grid.Row="1" FontSize="30" FontWeight="Bold" Foreground="#0B737B" />
+                    </Grid>
+                  </Border>
+                  <TextBlock x:Name="ReadTlsText" TextWrapping="Wrap" />
+                  <StackPanel Spacing="4">
+                    <TextBlock Classes="label" Text="密码 · Password" />
+                    <TextBlock x:Name="ReadPasswordText" Classes="caption" />
+                  </StackPanel>
+                  <TextBlock x:Name="ReadCredentialsText" Classes="caption" />
+                  <TextBlock x:Name="ReadRecipientsText" Classes="caption" />
+                  <Expander x:Name="ModelDetails" Header="完整模型（JSON）" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                    <TextBox x:Name="SnapshotPreview" Classes="code" Height="300" AutomationProperties.Name="完整模型数据，敏感值已隐藏" />
+                  </Expander>
+                </StackPanel>
+              </ScrollViewer>
+              <StackPanel Grid.Row="3" Spacing="4" IsVisible="{Binding !#GuideExpander.IsExpanded}">
+                <TextBlock x:Name="RetrySnapshotText" Classes="caption" />
+                <TextBlock x:Name="NotificationText" Classes="caption" Text="直接变更通知 · 0 次"
+                           ToolTip.Tip="同文件其他节成功提交也会通知；读取和校验失败不通知。" />
+              </StackPanel>
+              <WrapPanel Grid.Row="4">
+                <Button x:Name="ReadButton" Content="读取到表单" Click="ReadClick" Margin="0,0,6,6"
+                        ToolTip.Tip="将程序当前读到的值填回左边，丢弃未保存的编辑；不重新加载文件。" />
+                <Button x:Name="RefreshButton" Content="刷新观察" Click="RefreshClick" Margin="0,0,0,6"
+                        ToolTip.Tip="只刷新快照和文件显示，保留表单草稿，不调用 Reload。" />
+              </WrapPanel>
+            </Grid>
+          </Border>
+
+          <Border Grid.Column="2" Classes="surface" Padding="14">
+            <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="10">
+              <TextBlock Classes="heading" Text="磁盘实际保存" />
+              <TextBlock Grid.Row="1" Classes="caption" Text="下面是文件原文。密码会存成 enc:v1:...，程序读取时自动解密。" />
+              <TextBox x:Name="FilePreview" Grid.Row="2" Classes="code" AutomationProperties.Name="磁盘文件原文" />
+              <StackPanel Grid.Row="3" Spacing="4">
+                <TextBlock x:Name="FileStateText" Classes="caption" />
+                <TextBlock x:Name="ProtectionText" Classes="caption" IsVisible="{Binding !#GuideExpander.IsExpanded}" />
+              </StackPanel>
+              <WrapPanel Grid.Row="4">
+                <Button x:Name="ExternalWriteButton" Content="模拟外部修改" Click="ExternalWriteClick" Margin="0,0,6,6"
+                        ToolTip.Tip="另一个配置实例修改同一文件，用来模拟其他程序写入；当前程序仍保留旧值。" />
+                <Button x:Name="ReloadButton" Content="重新加载文件" Click="ReloadClick" Margin="0,0,0,6"
+                        ToolTip.Tip="重新读取磁盘并自动保护声明位置的明文；成功后更新快照和表单，丢弃未保存的草稿。" />
+              </WrapPanel>
+            </Grid>
+          </Border>
+        </Grid>
+        </Grid>
+      </TabItem>
+
+      <TabItem x:Name="SaveUpdateTab" Header="Save / Update 对照">
+        <Grid RowDefinitions="Auto,*,Auto" RowSpacing="12" Margin="0,10,0,0">
+          <Border Classes="surface" Padding="14">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+              <StackPanel Spacing="6" VerticalAlignment="Center">
+                <TextBlock Classes="heading" Text="只想改端口，应该怎样保存？" />
+                <TextBlock Classes="caption" Text="用两个独立文件模拟“草稿只改端口，外部修改主机”，分别保存后重新读取。沿用当前格式与保护方式，当前文件和草稿保留。" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                <Button x:Name="SaveUpdateComparisonButton" Classes="accent" Content="新建文件并运行对照"
+                        Click="SaveUpdateComparisonClick" />
+                <CheckBox x:Name="ComparisonAsyncInput" Content="异步 API"
+                          IsChecked="{Binding #UseAsyncInput.IsChecked, Mode=TwoWay}" VerticalAlignment="Center" />
+              </StackPanel>
+            </Grid>
+          </Border>
+          <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="12">
+            <Border Classes="surface">
+              <Grid RowDefinitions="Auto,*,Auto,Auto,Auto" RowSpacing="8">
+                <TextBlock Classes="heading" Text="Save · 保存完整草稿" />
+                <TextBox x:Name="SaveComparisonOutput" Grid.Row="1" Classes="code" Text="点击上方按钮查看真实操作过程。"
+                         AutomationProperties.Name="Save 对照操作过程" />
+                <TextBlock Grid.Row="2" Classes="caption" Text="重新打开 save 文件读到的结果" />
+                <TextBlock x:Name="SaveComparisonResult" Grid.Row="3" Text="尚未运行" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="4" Classes="caption" Text="草稿中的整个 Mail 被保存，旧主机覆盖了外部修改。" />
+              </Grid>
+            </Border>
+            <Border Grid.Column="1" Classes="surface">
+              <Grid RowDefinitions="Auto,*,Auto,Auto,Auto" RowSpacing="8">
+                <TextBlock Classes="heading" Text="Update · 基于最新值修改" />
+                <TextBox x:Name="UpdateComparisonOutput" Grid.Row="1" Classes="code" Text="点击上方按钮查看真实操作过程。"
+                         AutomationProperties.Name="Update 对照操作过程" />
+                <TextBlock Grid.Row="2" Classes="caption" Text="重新打开 update 文件读到的结果" />
+                <TextBlock x:Name="UpdateComparisonResult" Grid.Row="3" Text="尚未运行" FontSize="18" FontWeight="SemiBold"
+                           Foreground="#0B737B" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="4" Classes="caption" Text="读取最新 Mail，只改 Port；外部更新的主机保留。" />
+              </Grid>
+            </Border>
+          </Grid>
+          <Border Grid.Row="2" Classes="surface" Padding="14,10">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="label" Text="本次对照文件目录" />
+                <SelectableTextBlock x:Name="ComparisonDirectoryText" TextWrapping="Wrap" FontSize="12" />
+              </StackPanel>
+              <Button x:Name="OpenComparisonDirectoryButton" Grid.Column="1" Content="打开对照目录"
+                      Click="OpenComparisonDirectoryClick" IsEnabled="False" VerticalAlignment="Center" />
+            </Grid>
+          </Border>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="进阶：容器接入">
+        <Grid ColumnDefinitions="260,*" ColumnSpacing="12" Margin="0,10,0,0">
+          <Border Classes="surface">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+              <StackPanel Spacing="12" Margin="0,0,4,0">
+                <TextBlock Classes="heading" Text="选择接入场景" />
+                <TextBlock Classes="caption" Text="场景在当前文件上实际运行，使用异步 API。直接创建与容器消费共用同一运行库。" />
+                <Separator Background="#D5E1E6" />
+                <TextBlock Classes="label" Text="普通 DI · 类型读写" />
+                <TextBlock Classes="caption" Text="业务服务注入 ISettings&lt;T&gt;，与窗口共享当前配置。读取保留未保存的表单；外部文件修改需先重新加载。" />
+                <Button x:Name="ContainerReadButton" Classes="accent" Content="通过 DI 读取当前配置" Click="ContainerReadClick" />
+                <TextBlock Classes="caption" Text="先在“读写与加密”页编辑邮件表单，再点击下面的按钮保存到当前文件。" />
+                <Button x:Name="ContainerSaveButton" Content="通过 DI 保存邮件表单" Click="ContainerSaveClick"
+                        ToolTip.Tip="保存该页的完整邮件草稿，替换 Mail 配置节；Retry 配置保留。" />
+                <Separator Background="#D5E1E6" />
+                <TextBlock Classes="label" Text="Configuration / Options" />
+                <TextBlock Classes="caption" Text="依次保存、外部修改、调用原生 Reload 重读文件，对照 Configuration、Options、两种作用域的 Snapshot 与 Monitor。" />
+                <Button x:Name="OptionsButton" Content="运行 Options 对照" Click="OptionsClick" />
+                <Separator Background="#D5E1E6" />
+                <TextBlock Classes="label" Text="Host · 启动与停止" />
+                <TextBlock Classes="caption" Text="加载模型、创建 Options、运行托管服务，再正常停止。每一步均显示实际结果。" />
+                <Button x:Name="HostButton" Content="运行 Host 启停" Click="HostClick" />
+                <TextBlock Classes="caption" Text="窗口拥有当前文件；这些容器借用它，操作结束后释放自己的根。示例不发送邮件。" />
+              </StackPanel>
+            </ScrollViewer>
+          </Border>
+
+          <Border Grid.Column="1" Classes="surface">
+            <ScrollViewer x:Name="IntegrationScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+              <StackPanel Spacing="14">
+                <TextBlock Classes="heading" Text="实际运行结果" />
+                <StackPanel x:Name="OptionsTable" Spacing="8" IsVisible="False">
+                  <TextBlock Classes="caption" Text="数值均为 Mail.Port。原作用域已缓存；新作用域在每一步重新创建并首次取值。" />
+                  <Border Background="#DFF0F0" Padding="8,10" CornerRadius="4">
+                    <Grid ColumnDefinitions="125,*,*,*,*,*,46" ColumnSpacing="4">
+                      <TextBlock Text="操作完成后" Classes="label" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="Configuration" Classes="column" />
+                      <TextBlock Grid.Column="2" Text="IOptions" Classes="column" />
+                      <TextBlock Grid.Column="3" Text="Snapshot&#10;原作用域" Classes="column" />
+                      <TextBlock Grid.Column="4" Text="Snapshot&#10;新作用域" Classes="column" />
+                      <TextBlock Grid.Column="5" Text="Monitor" Classes="column" />
+                      <TextBlock Grid.Column="6" Text="通知" Classes="column" />
+                    </Grid>
+                  </Border>
+                  <ItemsControl x:Name="OptionsRows">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="local:OptionsObservation">
+                        <Border BorderBrush="#D5E1E6" BorderThickness="0,0,0,1" Padding="8,12">
+                          <Grid ColumnDefinitions="125,*,*,*,*,*,46" ColumnSpacing="4">
+                            <TextBlock Text="{Binding Stage}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="{Binding Configuration}" Classes="cell" />
+                            <TextBlock Grid.Column="2" Text="{Binding Options}" Classes="cell" />
+                            <TextBlock Grid.Column="3" Text="{Binding ExistingScope}" Classes="cell" />
+                            <TextBlock Grid.Column="4" Text="{Binding NewScope}" Classes="cell" />
+                            <TextBlock Grid.Column="5" Text="{Binding Monitor}" Classes="cell" Foreground="#0B737B" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="6" Text="{Binding Notifications}" Classes="cell" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+                <TextBox x:Name="IntegrationOutput" Classes="code" MinHeight="110"
+                         Text="选择左侧场景，这里会显示真实调用结果。&#10;&#10;使用代码可在“用法源码”页查看。"
+                         AutomationProperties.Name="容器演示结果" />
+                <StackPanel x:Name="NativePanel" Spacing="8" IsVisible="False">
+                  <TextBlock Classes="heading" Text="IConfiguration · 扁平读取视图" />
+                  <TextBlock Classes="caption" Text="来自 Confio 已解密的成功快照，包含模型默认值；这里只隐藏敏感值。文件原文可回到“直接读写”页对照。" />
+                  <TextBox x:Name="NativePreview" Classes="code" MinHeight="150"
+                           AutomationProperties.Name="原生配置读取视图，敏感值已隐藏" />
+                </StackPanel>
+              </StackPanel>
+            </ScrollViewer>
+          </Border>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="用法源码">
+        <Border Classes="surface" Margin="0,10,0,0">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
+            <ComboBox x:Name="SourceInput" SelectedIndex="0" SelectionChanged="SourceChanged"
+                      HorizontalAlignment="Stretch" AutomationProperties.Name="示例源文件">
+              <ComboBoxItem Content="MailSettings.cs · 模型与生成上下文" />
+              <ComboBoxItem Content="ApiCredentials.cs · 受保护子对象" />
+              <ComboBoxItem Content="RetrySettings.cs · record / init 与校验" />
+              <ComboBoxItem Content="MainWindow.Actions.cs · 同步 / 异步读写" />
+              <ComboBoxItem Content="IntegrationExamples.cs · DI / Configuration / Options / Host" />
+              <ComboBoxItem Content="MainWindow.axaml.cs · 文件创建与窗口生命周期" />
+            </ComboBox>
+            <TextBlock Grid.Row="1" Classes="caption"
+                       Text="这里展示随程序嵌入、实际参与编译的源文件，可选择并复制。模型只声明一次，直接读写与容器接入共用生成上下文。" />
+            <TextBox x:Name="SourcePreview" Grid.Row="2" Classes="code" TextWrapping="NoWrap"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto" AutomationProperties.Name="实际编译的示例源代码" />
+          </Grid>
+        </Border>
+      </TabItem>
+
+      <TabItem Header="操作记录">
+        <Border Classes="surface" Margin="0,10,0,0">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
+            <TextBlock Classes="heading" Text="操作与通知 · 最新在前" />
+            <TextBlock Grid.Row="1" Classes="caption"
+                       Text="记录成功、失败、取消与 OnChange 通知，保留本次演示最近 100 条。每条记录都有顺序和时间，不记录密码或凭据内容。" />
+            <TextBox x:Name="EventLog" Grid.Row="2" Classes="code"
+                     AutomationProperties.Name="操作记录，保留最近一百条" />
+          </Grid>
+        </Border>
+      </TabItem>
+    </TabControl>
+
+    <Border Grid.Row="3" Classes="surface" Padding="14,8">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+        <TextBlock x:Name="StatusText" Text="正在准备演示…" TextWrapping="Wrap" FontWeight="SemiBold" VerticalAlignment="Center" />
+        <Button x:Name="CancelButton" Grid.Column="1" Content="取消操作" IsEnabled="False" Click="CancelClick" />
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

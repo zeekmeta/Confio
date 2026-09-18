@@ -1,0 +1,120 @@
+name: Build and publish
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows package verification
+    runs-on: windows-2025
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - name: Read version and validate release tag
+        id: version
+        shell: pwsh
+        run: |
+          [xml]$build = Get-Content -LiteralPath Directory.Build.props -Raw
+          $version = [string]$build.Project.PropertyGroup.Version
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
+            throw "The release tag must match Directory.Build.props: v$version."
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+      - name: Build
+        run: dotnet build Confio.sln -c Release --nologo
+      - name: Test
+        run: dotnet test tests/ConfioTests/ConfioTests.csproj -c Release --no-build --nologo
+      - name: Pack
+        run: dotnet pack src/Confio/Confio.csproj -c Release --no-build -o artifacts/packages --nologo
+      - name: Verify Framework, modern .NET, and Native AOT
+        shell: pwsh
+        run: ./eng/Verify-Package.ps1 -Source ./artifacts/packages -NativeAot
+      - name: Upload verified package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: confio-package
+          path: artifacts/packages/Confio.${{ steps.version.outputs.version }}.nupkg
+          if-no-files-found: error
+
+  linux:
+    name: Linux package verification
+    needs: windows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: confio-package
+          path: artifacts/packages
+      - name: Install Native AOT prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes clang zlib1g-dev
+      - name: Verify modern .NET and Native AOT
+        env:
+          PACKAGE_VERSION: ${{ needs.windows.outputs.version }}
+        run: python3 eng/Verify-LinuxPackage.py --package "artifacts/packages/Confio.$PACKAGE_VERSION.nupkg" --native-aot
+
+  publish:
+    name: Publish verified package
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, linux]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PACKAGE_VERSION: ${{ needs.windows.outputs.version }}
+      NUGET_USER: ${{ vars.NUGET_USER }}
+      MIRROR_NUGET_SOURCE: ${{ secrets.MIRROR_NUGET_SOURCE }}
+    steps:
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: confio-package
+          path: artifacts/packages
+      - name: Check publishing configuration
+        env:
+          MIRROR_NUGET_API_KEY: ${{ secrets.MIRROR_NUGET_API_KEY }}
+        run: |
+          test -n "$NUGET_USER" || { echo 'Configure the NUGET_USER variable.'; exit 1; }
+          test -n "$MIRROR_NUGET_SOURCE" || { echo 'Configure the MIRROR_NUGET_SOURCE secret.'; exit 1; }
+          test -n "$MIRROR_NUGET_API_KEY" || { echo 'Configure the MIRROR_NUGET_API_KEY secret.'; exit 1; }
+          python3 -c 'import os; from urllib.parse import urlsplit; print("::add-mask::" + urlsplit(os.environ["MIRROR_NUGET_SOURCE"]).hostname)'
+      - name: Authenticate to NuGet.org
+        id: nuget-login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ env.NUGET_USER }}
+      - name: Publish to NuGet.org
+        env:
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push "artifacts/packages/Confio.$PACKAGE_VERSION.nupkg" --source https://www.nuget.org/api/v2/package --api-key "$NUGET_API_KEY" --skip-duplicate
+      - name: Publish to mirror
+        env:
+          MIRROR_NUGET_API_KEY: ${{ secrets.MIRROR_NUGET_API_KEY }}
+        run: dotnet nuget push "artifacts/packages/Confio.$PACKAGE_VERSION.nupkg" --source "$MIRROR_NUGET_SOURCE" --api-key "$MIRROR_NUGET_API_KEY" --skip-duplicate

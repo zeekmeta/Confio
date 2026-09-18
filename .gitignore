@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+artifacts/
+/backup/
+.vs/
+.idea/
+*.user
+*.suo
+*.nupkg
+*.snupkg

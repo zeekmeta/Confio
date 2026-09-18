@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net462;net47;net471;net472;net48;net481;net8.0;net10.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Authors>ZeekMeta</Authors>
+    <Copyright>Copyright (c) 2026 ZeekMeta</Copyright>
+    <Description>Strongly typed .NET configuration files for JSON, YAML, TOML 1.1, and INI. Synchronous and asynchronous APIs, model defaults and validation, DPAPI / AES-GCM field encryption, and DI / Options / Host integration. Includes a source generator. Supports .NET Framework 4.6.2–4.8.1 and .NET 8 / 9 / 10, with Native AOT on modern .NET.</Description>
+    <PackageProjectUrl>https://github.com/zeekmeta/Confio</PackageProjectUrl>
+    <PackageTags>configuration;settings;json;yaml;toml;ini;encryption;source-generator;native-aot;dotnet</PackageTags>
+    <PackageReleaseNotes>First stable release: four configuration formats, synchronous and asynchronous APIs, model defaults and validation, DPAPI / AES-GCM encryption, container integration, source generation, and Native AOT. Licensed under MIT. Release notes: https://github.com/zeekmeta/Confio/blob/main/CHANGELOG.md</PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/zeekmeta/Confio.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <IsAotCompatible Condition="'$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net10.0'">true</IsAotCompatible>
+  </PropertyGroup>
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ConfioTests" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+    <PackageReference Include="System.Text.Json" Condition="'$(TargetFramework)' != 'net10.0'" />
+    <PackageReference Include="Microsoft.Bcl.Cryptography" Condition="$(TargetFramework.StartsWith('net4'))" />
+    <PackageReference Include="PolySharp" Condition="$(TargetFramework.StartsWith('net4'))" PrivateAssets="none" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="YamlDotNet" />
+    <PackageReference Include="Tomlyn" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Ini" />
+    <ProjectReference Include="../ConfioGenerator/ConfioGenerator.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../README.zh-CN.md" Pack="true" PackagePath="/" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="/" />
+    <None Include="../ConfioGenerator/bin/$(Configuration)/netstandard2.0/ConfioGenerator.dll"
+          Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false" />
+  </ItemGroup>
+</Project>
