@@ -111,6 +111,8 @@ using var config = new ConfigurationFile(
 
 通过扩展名选择格式，也可用 `ConfigurationFileOptions.Format` 显式指定 `.conf` 或无扩展名文件。
 
+默认使用 UTF-8 无 BOM，可通过 `ConfigurationFileOptions.Encoding` 指定其他编码，包括 `Encoding.Default` 或用于 INI 的 GBK。读取时 Unicode BOM 优先，保存及自动保护明文后的写回使用所选输出编码。YAML 支持 UTF-8/16/32，TOML 要求 UTF-8。用法与失败行为见[编码指南](https://github.com/zeekmeta/Confio/blob/main/docs/使用指南.md#文件编码)。
+
 | 格式 | 扩展名 | 主要边界 |
 | --- | --- | --- |
 | JSON | `.json` | 支持 `null`，允许注释与尾逗号输入 |

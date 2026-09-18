@@ -22,8 +22,7 @@ internal static class YamlData
     {
         try
         {
-            var offset = bytes.Length >= 3 && bytes[0] == 0xef && bytes[1] == 0xbb && bytes[2] == 0xbf ? 3 : 0;
-            using var text = new StringReader(Utf8.GetString(bytes, offset, bytes.Length - offset));
+            using var text = new StringReader(Utf8.GetString(bytes));
             var reader = new Parser(text);
             reader.Consume<StreamStart>();
             if (reader.Accept<StreamEnd>(out _))
@@ -45,10 +44,6 @@ internal static class YamlData
         {
             // 第三方异常可能包含配置正文；只保留位置，不传播正文或内部异常。
             throw Invalid("Invalid YAML", exception.Start);
-        }
-        catch (DecoderFallbackException)
-        {
-            throw new InvalidDataException("The YAML configuration document must use valid UTF-8.");
         }
     }
 

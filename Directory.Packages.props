@@ -7,6 +7,7 @@
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.2" />
     <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.12" />
     <PackageVersion Include="System.Text.Json" Version="10.0.12" />
+    <PackageVersion Include="System.Text.Encoding.CodePages" Version="10.0.12" />
     <PackageVersion Include="System.Threading.AccessControl" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Bcl.Cryptography" Version="10.0.12" />
     <PackageVersion Include="PolySharp" Version="1.16.0" />

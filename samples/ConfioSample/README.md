@@ -29,6 +29,7 @@ dotnet run --project samples/ConfioSample/ConfioSample.csproj -c Release
 | --- | --- |
 | 顶部：打开配置 | 打开已有 Sample 模型的配置文件，先加载观察，显式保存时再保护；支持继续编辑、保存和重载。自动改值、Options 对照和主动损坏等教学动作需要新建演示文件 |
 | 顶部：打开目录 | 用系统文件管理器打开当前配置文件所在目录；尚未保存时只创建空目录，不生成配置文件，也不改变表单草稿 |
+| 顶部：文件编码 | 创建或打开时选择 UTF-8（有 / 无 BOM）、UTF-16、UTF-32、GBK 或 `Encoding.Default`；当前标签显示实际保存编码与 BOM，文件预览按同一选择读取。TOML 仅支持 UTF-8，YAML 支持 UTF-8/16/32 |
 | 邮件：填入示例、保存 | 编辑不会改变程序已读取的值或文件；展开“集合与多行文本”可编辑收件人和多行备注 |
 | Save / Update 对照：新建文件并运行对照 | 两份草稿都只改端口，另一个实例修改文件中的主机；重新打开文件后，Save 读到草稿中的旧主机，Update 读到外部修改后的主机。使用两个独立文件，保留当前文件与草稿，可打开对照目录查看原文；同步和异步均可运行 |
 | 密码与 API 凭据 | `Password` 单字段保护，`Credentials` 子对象整体保护；快照保留模型结构并隐藏敏感内容，文件展示真实密文 |
@@ -47,9 +48,15 @@ dotnet run --project samples/ConfioSample/ConfioSample.csproj -c Release
 
 两个配置节模型使用同一个 [AppSettingsContext](../../samples/ConfioSample/MailSettings.cs)，[ApiCredentials](../../samples/ConfioSample/ApiCredentials.cs) 作为 Mail 的受保护子对象。[窗口事件](../../samples/ConfioSample/MainWindow.Actions.cs)直接调用正式 API，[入门引导](../../samples/ConfioSample/MainWindow.Guide.cs)复用相同动作，[容器场景](../../samples/ConfioSample/IntegrationExamples.cs)按方法组织。窗口拥有文件实例，容器场景借用它并在操作结束后释放各自的根；关闭窗口会先取消并等待正在执行的操作。源码页随构建嵌入实际模型与消费代码，不维护另一份展示代码。示例不发送邮件或自动监听配置文件。UI 采用 Avalonia 12.1.2（MIT，提供 `net10.0` 资产），相关依赖仅由示例工程引用。
 
-## 打开文件与选择保护方式
+## 文件编码演示
 
-默认使用每次独立的临时 JSON 路径，读取默认值不创建文件，顶部显示配置与实际密钥位置。展开“新建演示与设置”，选择格式和保护方式后点击“新建演示”可重新开始，之前的文件保留。基础示例使用四种格式均可表达的数据；取消凭据勾选才表示 `null`。保护选择在创建或打开文件时生效，当前标签保持实际使用的选择。可通过“打开配置”或命令行路径加载已有 Sample 文件；打开时关闭明文自动回写，常规编辑和保存仍可使用，教学改写保持隔离：
+展开顶部设置，选择 INI 与 GBK 后新建演示，填入示例并保存。文件预览会正确显示中文，顶部标明“保存编码：GBK（无 BOM）”。在备注中输入 emoji 后保存，会报告编码失败并保留原文件、已加载配置及草稿；受保护密码可包含 emoji，因为文件保存的是密文。
+
+也可选择 JSON 与 UTF-16，或 UTF-8 有 BOM，观察同一套 API 的读写。设置只在创建或打开时生效，改变下拉框不会改变当前文件。读取时 BOM 优先，保存以选择的编码为准；`Encoding.Default` 在本示例的现代 .NET 运行时中是 UTF-8，详细规则见[编码指南](../../docs/使用指南.md#文件编码)。
+
+## 打开文件、编码与保护方式
+
+默认使用每次独立的临时 JSON 路径及 UTF-8 无 BOM，读取默认值不创建文件，顶部显示配置与实际密钥位置。展开“新建演示与设置”，选择格式、编码和保护方式后点击“新建演示”可重新开始，之前的文件保留。基础示例使用四种格式均可表达的数据；取消凭据勾选才表示 `null`。选择在创建或打开文件时生效，当前标签保持实际使用的选择。可通过“打开配置”或命令行路径加载已有 Sample 文件；打开时关闭明文自动回写，常规编辑和保存仍可使用，教学改写保持隔离：
 
 ```powershell
 dotnet run --project samples/ConfioSample/ConfioSample.csproj -c Release -- artifacts/sample-run/appsettings.yaml
@@ -60,8 +67,8 @@ dotnet run --project samples/ConfioSample/ConfioSample.csproj -c Release -- arti
 示例启用 AOT 分析，关闭默认 JSON 反射；TOML 直接处理固定节点，不调用对象反射转换。Windows x64 可通过下列命令发布和运行 Native AOT，需要 Visual Studio 的“使用 C++ 的桌面开发”工作负载和 Windows SDK：
 
 ```powershell
-dotnet publish samples/ConfioSample/ConfioSample.csproj -c Release -r win-x64 -o artifacts/sample-aot
-./artifacts/sample-aot/ConfioSample.exe
+dotnet publish samples/ConfioSample/ConfioSample.csproj -c Release -r win-x64 -o artifacts/sample-aot/win-x64
+./artifacts/sample-aot/win-x64/ConfioSample.exe
 ```
 
 macOS arm64 使用已安装的 Apple Command Line Tools 发布同一示例：
@@ -79,7 +86,7 @@ dotnet publish samples/ConfioSample/ConfioSample.csproj -c Release -r osx-arm64 
 
 ```powershell
 dotnet run --project samples/ConfioSample/ConfioSample.csproj -c Release -- --verify
-./artifacts/sample-aot/ConfioSample.exe --verify --aes
+./artifacts/sample-aot/win-x64/ConfioSample.exe --verify --aes
 ```
 
 成功返回 `0`，在初始配置路径旁生成 `.verification.txt` 和默认值、引导关键步骤、完整模型、读写、集合、子对象、边界失败、明文自动保护前后、Save / Update 对照、容器、源码、日志及较小窗口的 PNG 截图；失败返回非零退出码。最小窗口检查引导展开与收起时编辑区及观察区的可用高度，内容较多时可独立滚动。UI 入口用于理解和验证消费体验，运行库的并发、保护认证失败及其他复杂边界仍由[行为测试](../../tests/ConfioTests/ConfigurationFileTests.cs)、[格式与操作顺序测试](../../tests/ConfioTests/AdditionalFormatTests.cs)、[保护测试](../../tests/ConfioTests/ProtectionTests.cs)、[明文保护测试](../../tests/ConfioTests/PlaintextProtectionTests.cs)、[平台文件测试](../../tests/ConfioTests/PlatformFileTests.cs)、[原生接入测试](../../tests/ConfioTests/NativeIntegrationTests.cs)和[真实消费者](../../tests/ConfioConsumer/Program.cs)验收。

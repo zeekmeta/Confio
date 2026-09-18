@@ -257,8 +257,8 @@ public partial class MainWindow
                     """
             };
             Directory.CreateDirectory(Path.GetDirectoryName(CurrentFile.Path)!);
-            if (UseAsync) await File.WriteAllTextAsync(CurrentFile.Path, content, token);
-            else File.WriteAllText(CurrentFile.Path, content);
+            if (UseAsync) await File.WriteAllTextAsync(CurrentFile.Path, content, _fileOptions.Encoding, token);
+            else File.WriteAllText(CurrentFile.Path, content, _fileOptions.Encoding);
         }, Editors.All);
 
     private async void NullPasswordClick(object? sender, RoutedEventArgs e) => await SavePasswordAsync(null);
@@ -301,8 +301,8 @@ public partial class MainWindow
             _fileBeforeDamage = UseAsync
                 ? await File.ReadAllBytesAsync(CurrentFile.Path, token)
                 : File.ReadAllBytes(CurrentFile.Path);
-            if (UseAsync) await File.WriteAllTextAsync(CurrentFile.Path, "[", token);
-            else File.WriteAllText(CurrentFile.Path, "[");
+            if (UseAsync) await File.WriteAllTextAsync(CurrentFile.Path, "[", _fileOptions.Encoding, token);
+            else File.WriteAllText(CurrentFile.Path, "[", _fileOptions.Encoding);
         });
 
     private async void RestoreFileClick(object? sender, RoutedEventArgs e) =>

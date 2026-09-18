@@ -22,6 +22,7 @@
     <InternalsVisibleTo Include="ConfioTests" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" />
     <PackageReference Include="System.Text.Json" Condition="'$(TargetFramework)' != 'net10.0'" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Condition="$(TargetFramework.StartsWith('net4'))" />
     <PackageReference Include="Microsoft.Bcl.Cryptography" Condition="$(TargetFramework.StartsWith('net4'))" />
     <PackageReference Include="PolySharp" Condition="$(TargetFramework.StartsWith('net4'))" PrivateAssets="none" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />

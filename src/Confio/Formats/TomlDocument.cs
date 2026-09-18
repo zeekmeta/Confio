@@ -23,8 +23,7 @@ internal sealed class TomlDocument(TomlTable document) : FileDocument
         if (bytes is null) return new TomlDocument(new TomlTable());
         try
         {
-            var offset = bytes.Length >= 3 && bytes[0] == 0xef && bytes[1] == 0xbb && bytes[2] == 0xbf ? 3 : 0;
-            var text = Utf8.GetString(bytes, offset, bytes.Length - offset);
+            var text = Utf8.GetString(bytes);
             // 固定节点转换会覆盖内联表的重复键；先执行上游的格式语义校验。
             SyntaxParser.ParseStrict(text, TomlDocumentContext.Default.Options, validate: true);
             var table = TomlSerializer.Deserialize(text, TomlDocumentContext.Default.TomlTable)!;
@@ -34,10 +33,6 @@ internal sealed class TomlDocument(TomlTable document) : FileDocument
         catch (TomlException exception)
         {
             throw new InvalidDataException($"Invalid TOML at line {exception.Line}, column {exception.Column}.");
-        }
-        catch (DecoderFallbackException)
-        {
-            throw new InvalidDataException("The TOML configuration document must use valid UTF-8.");
         }
     }
 

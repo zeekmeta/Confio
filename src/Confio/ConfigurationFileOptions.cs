@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Confio;
 
 /// <summary>
@@ -9,6 +11,15 @@ public sealed class ConfigurationFileOptions
     /// 显式指定格式；省略时根据文件扩展名选择，默认文件使用 JSON。
     /// </summary>
     public ConfigurationFormat? Format { get; set; }
+
+    /// <summary>
+    /// 文件的写入编码及无 BOM 输入的读取编码，默认 UTF-8 无 BOM。
+    /// 读取时 Unicode BOM 优先；写入使用本编码的前导标记，不保留输入编码。
+    /// 创建或注册时复制编码并启用异常回退，非法字节或无法表示的字符会报错，不替换为问号。
+    /// YAML 只接受 UTF-8、UTF-16、UTF-32，TOML 只接受 UTF-8。
+    /// Encoding.Default 遵循运行时：Framework 为系统代码页，现代 .NET 为 UTF-8。
+    /// </summary>
+    public Encoding Encoding { get; set; } = new UTF8Encoding(false, true);
 
     /// <summary>
     /// 选择保护方式；Auto 在 Windows 使用 DPAPI，其他支持平台使用自动 AES。

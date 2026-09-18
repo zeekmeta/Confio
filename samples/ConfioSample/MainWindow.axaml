@@ -98,6 +98,17 @@
             <ComboBoxItem Content="TOML" />
             <ComboBoxItem Content="INI" />
           </ComboBox>
+          <ComboBox x:Name="EncodingInput" SelectedIndex="0" MinWidth="165"
+                    AutomationProperties.Name="创建或打开配置的文件编码"
+                    ToolTip.Tip="创建或打开时生效。读取时 BOM 优先，保存按此选择；TOML 使用 UTF-8，YAML 使用 UTF-8 / 16 / 32。">
+            <ComboBoxItem Content="UTF-8 · 无 BOM" />
+            <ComboBoxItem Content="UTF-8 · 有 BOM" />
+            <ComboBoxItem Content="UTF-16 LE · 有 BOM" />
+            <ComboBoxItem Content="UTF-16 BE · 有 BOM" />
+            <ComboBoxItem Content="UTF-32 LE · 有 BOM" />
+            <ComboBoxItem Content="GBK · 无 BOM" />
+            <ComboBoxItem Content="Encoding.Default" />
+          </ComboBox>
           <ComboBox x:Name="ProtectionInput" SelectedIndex="0" MinWidth="175"
                     AutomationProperties.Name="新演示的保护方式"
                     ToolTip.Tip="创建或打开文件时生效。AES-GCM 自动生成并复用密钥文件。">

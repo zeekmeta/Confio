@@ -140,7 +140,7 @@ if ((@($manifest.package.metadata.dependencies.group.targetFramework | Sort-Obje
 foreach ($group in $manifest.package.metadata.dependencies.group) {
     $dependencies = @($group.dependency | ForEach-Object { $_.id })
     $framework = $group.targetFramework.StartsWith('.NETFramework')
-    foreach ($dependency in @('Microsoft.Bcl.Cryptography', 'PolySharp')) {
+    foreach ($dependency in @('Microsoft.Bcl.Cryptography', 'PolySharp', 'System.Text.Encoding.CodePages')) {
         if (($dependencies -contains $dependency) -ne $framework) {
             throw "Incorrect $dependency dependency group: $($group.targetFramework)."
         }

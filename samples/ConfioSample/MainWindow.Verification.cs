@@ -468,6 +468,35 @@ public partial class MainWindow
             await CaptureAsync(outputPath + ".compact-options.png");
             RequireSafeObservations();
 
+            _verificationStep = "file encodings";
+            Workspace.SelectedIndex = 0;
+            SessionSettings.IsExpanded = true;
+            foreach (var choice in new[] { (Format: 0, Encoding: 2), (Format: 2, Encoding: 1), (Format: 3, Encoding: 5) })
+            {
+                FormatInput.SelectedIndex = choice.Format;
+                EncodingInput.SelectedIndex = choice.Encoding;
+                await ClickAsync(NewSessionButton, deadline.Token);
+                await ClickAsync(FillExampleButton, deadline.Token);
+                await ClickAsync(SaveMailButton, deadline.Token);
+                var encoded = File.ReadAllBytes(CurrentFile.Path);
+                Require(SessionSummaryText.Text!.Contains("保存编码", StringComparison.Ordinal)
+                    && encoded.AsSpan().StartsWith(_fileOptions.Encoding.GetPreamble())
+                    && FilePreview.Text == File.ReadAllText(CurrentFile.Path, _fileOptions.Encoding)
+                    && FilePreview.Text!.Contains("中文备注", StringComparison.Ordinal)
+                    && ReadNewFile().Notes == NotesInput.Text,
+                    "Encoded sessions must show readable previews, the write encoding and round-trip values.");
+                if (choice.Encoding == 5)
+                {
+                    NotesInput.Text = "GBK 无法保存 😀";
+                    await ClickAsync(SaveMailButton, deadline.Token, succeeds: false);
+                    Require(encoded.AsSpan().SequenceEqual(File.ReadAllBytes(CurrentFile.Path))
+                        && ReadNewFile().Notes != NotesInput.Text,
+                        "A GBK encoding failure must retain the file, snapshot and editable draft.");
+                    await CaptureAsync(outputPath + ".encoding-gbk.png");
+                }
+            }
+            EncodingInput.SelectedIndex = 0;
+
             _verificationStep = "new-session isolation";
             SessionSettings.IsExpanded = true;
             var sessionLabel = SessionSummaryText.Text;

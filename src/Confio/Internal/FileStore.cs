@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confio.Formats;
@@ -12,7 +13,7 @@ internal static class FileStore
     private const int MaximumCommitRetries = 4;
     private const int CommitRetryDelayMilliseconds = 25;
 
-    internal static FileDocument Read(string path, FileFormat format, out bool exists)
+    internal static FileDocument Read(string path, FileFormat format, Encoding encoding, out bool exists)
     {
         try
         {
@@ -20,7 +21,7 @@ internal static class FileStore
             using var buffer = new MemoryStream();
             stream.CopyTo(buffer);
             exists = true;
-            return format.Parse(buffer.ToArray());
+            return format.Parse(FileTextEncoding.Decode(buffer.ToArray(), encoding, format));
         }
         catch (FileNotFoundException)
         {
@@ -35,14 +36,14 @@ internal static class FileStore
     }
 
     internal static async Task<(FileDocument Document, bool Exists)> ReadAsync(string path, FileFormat format,
-        CancellationToken cancellationToken)
+        Encoding encoding, CancellationToken cancellationToken)
     {
         try
         {
             using var stream = OpenRead(path, asynchronous: true);
             using var buffer = new MemoryStream();
             await stream.CopyToAsync(buffer, 81920, cancellationToken).ConfigureAwait(false);
-            return (format.Parse(buffer.ToArray()), true);
+            return (format.Parse(FileTextEncoding.Decode(buffer.ToArray(), encoding, format)), true);
         }
         catch (FileNotFoundException)
         {

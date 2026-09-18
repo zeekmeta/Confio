@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Confio.Formats;
 
 namespace Confio.Internal;
@@ -32,6 +33,10 @@ internal sealed class FileDefinition
             throw new PlatformNotSupportedException("DPAPI requires Windows.");
         FilePath = Path.GetFullPath(path ?? DefaultPaths.Configuration(options.Format ?? ConfigurationFormat.Json));
         Format = options.Format is { } format ? FileFormat.FromFormat(format) : FileFormat.FromPath(FilePath);
+        Encoding = (Encoding)(options.Encoding ?? throw new ArgumentNullException(nameof(options.Encoding))).Clone();
+        Encoding.EncoderFallback = EncoderFallback.ExceptionFallback;
+        Encoding.DecoderFallback = DecoderFallback.ExceptionFallback;
+        Format.ValidateEncoding(Encoding);
         KeyFilePath = options.Protector is null && Protection == ConfigurationProtection.AesGcm && options.EncryptionKey is null
             ? Path.GetFullPath(options.KeyFilePath ?? DefaultPaths.Key()) : null;
         if (KeyFilePath is not null && string.Equals(FilePath, KeyFilePath,
@@ -76,5 +81,6 @@ internal sealed class FileDefinition
     internal bool ProtectPlaintextOnLoad { get; }
     internal string FilePath { get; }
     internal FileFormat Format { get; }
+    internal Encoding Encoding { get; }
     internal Dictionary<Type, SettingsDeclaration> Declarations { get; }
 }

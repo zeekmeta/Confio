@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using Confio.Internal;
 
 namespace Confio.Formats;
@@ -41,6 +42,14 @@ internal sealed class FileFormat
     internal FileDocument Empty() => _parse(null);
 
     internal StringComparison PathComparison => this == Ini ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+    internal void ValidateEncoding(Encoding encoding)
+    {
+        if (this == Toml && encoding.CodePage != 65001)
+            throw new NotSupportedException("TOML configuration files require UTF-8 encoding.");
+        if (this == Yaml && encoding.CodePage is not (65001 or 1200 or 1201 or 12000 or 12001))
+            throw new NotSupportedException("YAML configuration files require UTF-8, UTF-16 or UTF-32 encoding.");
+    }
 
     internal void Validate(SettingsDeclaration declaration)
     {

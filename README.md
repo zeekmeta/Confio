@@ -113,6 +113,8 @@ When loading existing plaintext, protected fields are encrypted and written back
 
 The file extension selects the format. Use `ConfigurationFileOptions.Format` to specify it explicitly for `.conf` files or files without an extension.
 
+Files default to UTF-8 without a BOM. Set `ConfigurationFileOptions.Encoding` to select another encoding, including `Encoding.Default` or GBK for INI. A Unicode BOM determines the input encoding; saving, including automatic plaintext protection, uses the selected output encoding. YAML supports UTF-8/16/32, and TOML requires UTF-8. See the [encoding guide](https://github.com/zeekmeta/Confio/blob/main/docs/使用指南.md#文件编码) for examples and failure behavior.
+
 | Format | Extensions | Main constraints |
 | --- | --- | --- |
 | JSON | `.json` | Supports `null`; accepts comments and trailing commas on input |

@@ -25,7 +25,6 @@ internal sealed class IniDocument(JsonObject document) : NodeDocument(document, 
         if (bytes is null) return new IniDocument(root);
         try
         {
-            _ = Utf8.GetCharCount(bytes);
             using var stream = new MemoryStream(bytes);
             foreach (var pair in IniStreamConfigurationProvider.Read(stream))
             {
@@ -42,7 +41,7 @@ internal sealed class IniDocument(JsonObject document) : NodeDocument(document, 
         catch (Exception exception) when (exception is FormatException or ArgumentException)
         {
             // 原生解析异常包含原文或键名，不能把它们作为内部异常传播。
-            throw new InvalidDataException("The INI document contains invalid UTF-8, invalid lines or conflicting keys.");
+            throw new InvalidDataException("The INI document contains invalid lines or conflicting keys.");
         }
     }
 

@@ -59,6 +59,7 @@ namespace ConfioConsumer
                 try
                 {
                     await VerifyOptions(Path.Combine(directory, "options"), deadline.Token);
+                    await VerifyEncodings(Path.Combine(directory, "encodings"), deadline.Token);
                     await VerifyDirect(Path.Combine(directory, "direct", "settings.json"), deadline.Token);
                     await VerifyInheritedProtection(Path.Combine(directory, "inherited", "settings.json"), deadline.Token);
                     foreach (var extension in new[] { "yaml", "yml" })

@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -118,12 +119,24 @@ public partial class MainWindow : Window
     private string CurrentExtension => Path.GetExtension(CurrentFile.Path).ToLowerInvariant();
     private bool SupportsNull => CurrentExtension is ".json" or ".yaml" or ".yml";
 
+    private Encoding SelectedEncoding => EncodingInput.SelectedIndex switch
+    {
+        1 => new UTF8Encoding(true, true),
+        2 => Encoding.Unicode,
+        3 => Encoding.BigEndianUnicode,
+        4 => Encoding.UTF32,
+        5 => CodePagesEncodingProvider.Instance.GetEncoding("gbk")!,
+        6 => Encoding.Default,
+        _ => new UTF8Encoding(false, true)
+    };
+
     private async Task CreateFileAsync(string path, CancellationToken cancellationToken)
     {
         path = Path.GetFullPath(path);
         var existing = File.Exists(path);
         var options = new ConfigurationFileOptions
         {
+            Encoding = SelectedEncoding,
             Protection = ProtectionInput.SelectedIndex == 1 ? ConfigurationProtection.AesGcm : ConfigurationProtection.Auto,
             // 打开已有文件先只读观察；用户显式保存时仍加密。
             ProtectPlaintextOnLoad = !existing
@@ -181,7 +194,9 @@ public partial class MainWindow : Window
             ? "null 表示没有值，空字符串表示内容为空；当前格式能区分并保存两者。这两种密码值都不会加密。"
             : "这是主动失败演示：点击后尝试保存 null，观察底部的属性位置与失败原因。原文件、旧配置与未保存草稿保留。空字符串是另一种值，可以正常保存。";
         var protection = next.KeyFilePath is not null ? "AES-GCM · 自动持久化密钥" : "Windows DPAPI";
-        SessionSummaryText.Text = $"当前：{Path.GetExtension(path).TrimStart('.').ToUpperInvariant()} · {protection}";
+        var encodingName = options.Encoding.CodePage == 936 ? "GBK" : options.Encoding.WebName.ToUpperInvariant();
+        var bom = options.Encoding.GetPreamble().Length == 0 ? "无 BOM" : "有 BOM";
+        SessionSummaryText.Text = $"当前：{Path.GetExtension(path).TrimStart('.').ToUpperInvariant()} · {protection} · 保存编码：{encodingName}（{bom}）";
         KeyFilePathText.Text = next.KeyFilePath is { } keyPath ? "密钥文件：" + keyPath : "密钥由 Windows 当前用户 DPAPI 管理";
         ComparisonDirectoryText.Text = "";
         OpenComparisonDirectoryButton.IsEnabled = false;
@@ -282,8 +297,9 @@ public partial class MainWindow : Window
                 OptionsValidationException => "启动校验未通过，请检查服务器地址和端口。",
                 CryptographicException => "字段保护失败，请检查密钥、当前用户及系统保护设施。",
                 PlatformNotSupportedException => "当前环境无法使用所选保护设施，可选择 AES-GCM 后新建演示。",
+                NotSupportedException => "格式与编码不匹配：TOML 使用 UTF-8，YAML 使用 UTF-8 / 16 / 32。请选择合适的编码后重新打开或新建。",
                 UnauthorizedAccessException => "没有文件访问权限，请使用可写目录。",
-                InvalidDataException => "文件内容无效，旧配置仍可读取。请修正后重载；若由演示损坏，可点击“还原演示文件”。",
+                InvalidDataException => "文件内容或编码无效，或所选编码无法表示文本（如 GBK 中的 emoji）。旧配置保留，请修正后重试；演示损坏可点击“还原演示文件”。",
                 IOException => "文件访问失败，请检查路径、密钥文件、权限和占用。",
                 ArgumentException or OverflowException => "输入无效，请检查整数范围和文件扩展名。",
                 _ => "操作未完成，请检查输入并重试。"
@@ -383,13 +399,13 @@ public partial class MainWindow : Window
         try
         {
             FilePreview.Text = exists
-                ? await File.ReadAllTextAsync(CurrentFile.Path, cancellationToken)
+                ? await File.ReadAllTextAsync(CurrentFile.Path, _fileOptions.Encoding, cancellationToken)
                 : "文件尚未创建，这是正常的。\n\n程序先使用模型中声明的默认值，例如端口 587。\n\n保存配置后，这里才会出现实际文件内容；密码等受保护字段会自动加密。";
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or DecoderFallbackException)
         {
             FileStateText.Text = "文件预览读取失败";
-            FilePreview.Text = $"无法读取磁盘原文（{exception.GetType().Name}）。\n请检查文件权限或占用后刷新观察。";
+            FilePreview.Text = $"无法读取磁盘原文（{exception.GetType().Name}）。\n请检查文件编码、权限或占用后刷新观察。";
         }
     }
 

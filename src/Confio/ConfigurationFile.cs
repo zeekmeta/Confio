@@ -354,7 +354,7 @@ public sealed class ConfigurationFile : IDisposable
         {
             if (reset)
             {
-                var input = FileStore.Read(Path, _definition.Format, out var exists);
+                var input = FileStore.Read(Path, _definition.Format, _definition.Encoding, out var exists);
                 if (!exists)
                 {
                     Volatile.Write(ref _snapshot, LoadSnapshot(input));
@@ -364,7 +364,7 @@ public sealed class ConfigurationFile : IDisposable
             }
 
             using var fileLock = FileStore.Acquire(Path);
-            var document = FileStore.Read(Path, _definition.Format, out _);
+            var document = FileStore.Read(Path, _definition.Format, _definition.Encoding, out _);
             if (update is not null)
             {
                 var current = LoadSnapshot(document);
@@ -394,7 +394,7 @@ public sealed class ConfigurationFile : IDisposable
             document.ApplyProtection(plaintext);
             if (changed || plaintext.Count != 0)
             {
-                FileStore.Write(Path, document.Encode());
+                FileStore.Write(Path, FileTextEncoding.Encode(document, _definition.Encoding));
             }
             Volatile.Write(ref _snapshot, candidate);
             published = true;
@@ -418,7 +418,7 @@ public sealed class ConfigurationFile : IDisposable
         {
             if (reset)
             {
-                var input = await FileStore.ReadAsync(Path, _definition.Format, cancellationToken).ConfigureAwait(false);
+                var input = await FileStore.ReadAsync(Path, _definition.Format, _definition.Encoding, cancellationToken).ConfigureAwait(false);
                 if (!input.Exists)
                 {
                     var defaults = await LoadSnapshotAsync(input.Document, cancellationToken).ConfigureAwait(false);
@@ -430,7 +430,7 @@ public sealed class ConfigurationFile : IDisposable
             }
 
             using var fileLock = await FileStore.AcquireAsync(Path, cancellationToken).ConfigureAwait(false);
-            var latest = await FileStore.ReadAsync(Path, _definition.Format, cancellationToken).ConfigureAwait(false);
+            var latest = await FileStore.ReadAsync(Path, _definition.Format, _definition.Encoding, cancellationToken).ConfigureAwait(false);
             var document = latest.Document;
             if (update is not null)
             {
@@ -463,7 +463,7 @@ public sealed class ConfigurationFile : IDisposable
             cancellationToken.ThrowIfCancellationRequested();
             if (changed || plaintext.Count != 0)
             {
-                await FileStore.WriteAsync(Path, document.Encode(), cancellationToken).ConfigureAwait(false);
+                await FileStore.WriteAsync(Path, FileTextEncoding.Encode(document, _definition.Encoding), cancellationToken).ConfigureAwait(false);
             }
             Volatile.Write(ref _snapshot, candidate);
             published = true;
@@ -493,7 +493,7 @@ public sealed class ConfigurationFile : IDisposable
 
     private FileSnapshot LoadFile(bool configuration = false)
     {
-        var document = FileStore.Read(Path, _definition.Format, out _);
+        var document = FileStore.Read(Path, _definition.Format, _definition.Encoding, out _);
         if (!_definition.ProtectPlaintextOnLoad || PlaintextSlots(document).Count == 0)
         {
             return LoadSnapshot(document, configuration: configuration);
@@ -501,21 +501,21 @@ public sealed class ConfigurationFile : IDisposable
 
         // 只有需要保护写回才取得文件锁，锁内重读，避免覆盖另一个进程的新值。
         using var fileLock = FileStore.Acquire(Path);
-        document = FileStore.Read(Path, _definition.Format, out _);
+        document = FileStore.Read(Path, _definition.Format, _definition.Encoding, out _);
         var candidate = LoadSnapshot(document, configuration: configuration);
         var plaintext = PlaintextSlots(document);
         _protection.Protect(plaintext);
         document.ApplyProtection(plaintext);
         if (plaintext.Count != 0)
         {
-            FileStore.Write(Path, document.Encode());
+            FileStore.Write(Path, FileTextEncoding.Encode(document, _definition.Encoding));
         }
         return candidate;
     }
 
     private async Task<FileSnapshot> LoadFileAsync(CancellationToken cancellationToken, bool configuration = false)
     {
-        var input = await FileStore.ReadAsync(Path, _definition.Format, cancellationToken).ConfigureAwait(false);
+        var input = await FileStore.ReadAsync(Path, _definition.Format, _definition.Encoding, cancellationToken).ConfigureAwait(false);
         if (!_definition.ProtectPlaintextOnLoad || PlaintextSlots(input.Document).Count == 0)
         {
             var snapshot = await LoadSnapshotAsync(input.Document, cancellationToken, configuration: configuration).ConfigureAwait(false);
@@ -524,7 +524,7 @@ public sealed class ConfigurationFile : IDisposable
         }
 
         using var fileLock = await FileStore.AcquireAsync(Path, cancellationToken).ConfigureAwait(false);
-        input = await FileStore.ReadAsync(Path, _definition.Format, cancellationToken).ConfigureAwait(false);
+        input = await FileStore.ReadAsync(Path, _definition.Format, _definition.Encoding, cancellationToken).ConfigureAwait(false);
         var candidate = await LoadSnapshotAsync(input.Document, cancellationToken, configuration: configuration).ConfigureAwait(false);
         var plaintext = PlaintextSlots(input.Document);
         await _protection.ProtectAsync(plaintext, cancellationToken).ConfigureAwait(false);
@@ -532,7 +532,7 @@ public sealed class ConfigurationFile : IDisposable
         cancellationToken.ThrowIfCancellationRequested();
         if (plaintext.Count != 0)
         {
-            await FileStore.WriteAsync(Path, input.Document.Encode(), cancellationToken).ConfigureAwait(false);
+            await FileStore.WriteAsync(Path, FileTextEncoding.Encode(input.Document, _definition.Encoding), cancellationToken).ConfigureAwait(false);
         }
         return candidate;
     }

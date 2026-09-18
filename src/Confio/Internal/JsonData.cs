@@ -32,8 +32,7 @@ internal static class JsonData
     {
         try
         {
-            var offset = bytes.Length >= 3 && bytes[0] == 0xef && bytes[1] == 0xbb && bytes[2] == 0xbf ? 3 : 0;
-            var node = JsonNode.Parse(bytes.AsSpan(offset),
+            var node = JsonNode.Parse(bytes,
                 new JsonNodeOptions { PropertyNameCaseInsensitive = false },
                 new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip, MaxDepth = MaximumDepth });
             var root = node as JsonObject ?? throw new InvalidDataException("The configuration document must be a JSON object.");
