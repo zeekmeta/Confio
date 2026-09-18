@@ -39,7 +39,13 @@ $versions.Project.SelectSingleNode('ItemGroup[not(@Condition)]').AppendChild($ca
 $versions.Save((Join-Path $verification 'Directory.Packages.props'))
 
 $config = [xml]'<configuration><packageSources><clear /></packageSources><packageSourceMapping /><config /></configuration>'
-foreach ($sourceEntry in @(@('candidate', $feed), @('nuget.org', 'https://api.nuget.org/v3/index.json'))) {
+$nugetSource = 'https://api.nuget.org/v3/index.json'
+$sourceEntries = @(@('candidate', $feed, 'Confio'), @('nuget.org', $nugetSource, '*'))
+# 同一服务地址只登记一次，避免 NuGet 去重后丢失依赖的源映射。
+if ($feed.TrimEnd('/') -eq $nugetSource) {
+    $sourceEntries = ,@('candidate', $feed, '*')
+}
+foreach ($sourceEntry in $sourceEntries) {
     $entry = $config.CreateElement('add')
     $entry.SetAttribute('key', $sourceEntry[0])
     $entry.SetAttribute('value', $sourceEntry[1])
@@ -47,7 +53,7 @@ foreach ($sourceEntry in @(@('candidate', $feed), @('nuget.org', 'https://api.nu
     $mapping = $config.CreateElement('packageSource')
     $mapping.SetAttribute('key', $sourceEntry[0])
     $pattern = $config.CreateElement('package')
-    $pattern.SetAttribute('pattern', $(if ($sourceEntry[0] -eq 'candidate') { 'Confio' } else { '*' }))
+    $pattern.SetAttribute('pattern', $sourceEntry[2])
     $mapping.AppendChild($pattern) | Out-Null
     $config.configuration.SelectSingleNode('packageSourceMapping').AppendChild($mapping) | Out-Null
 }
